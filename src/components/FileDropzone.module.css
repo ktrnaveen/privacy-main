@@ -1,0 +1,107 @@
+.dropzone {
+    position: relative;
+    border: 2px dashed var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 3rem 2rem;
+    text-align: center;
+    transition: all var(--transition-base);
+    background: var(--color-surface);
+    cursor: pointer;
+}
+
+.dropzone:hover {
+    border-color: var(--color-border-hover);
+    background: var(--color-surface-hover);
+}
+
+.dropzone.dragging {
+    border-color: var(--color-accent-green);
+    background: rgba(16, 185, 129, 0.05);
+    box-shadow: inset 0 0 40px rgba(16, 185, 129, 0.1);
+}
+
+.dropzone.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.dropzone.error {
+    border-color: var(--color-accent-rose);
+}
+
+.input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    cursor: pointer;
+}
+
+.iconWrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 72px;
+    height: 72px;
+}
+
+.iconBg {
+    position: absolute;
+    inset: 0;
+    background: var(--gradient-brand);
+    border-radius: 50%;
+    opacity: 0.15;
+    transition: all var(--transition-base);
+}
+
+.dropzone:hover .iconBg,
+.dropzone.dragging .iconBg {
+    opacity: 0.25;
+    transform: scale(1.1);
+}
+
+.icon {
+    position: relative;
+    z-index: 1;
+    color: var(--color-accent-green);
+    transition: transform var(--transition-spring);
+}
+
+.dropzone:hover .icon {
+    transform: translateY(-4px);
+}
+
+.dropzone.dragging .icon {
+    transform: translateY(-8px) scale(1.1);
+}
+
+.labelText {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.description {
+    font-size: 0.875rem;
+    color: var(--color-text-tertiary);
+}
+
+.errorText {
+    font-size: 0.875rem;
+    color: var(--color-accent-rose);
+    margin-top: 0.5rem;
+}

@@ -1,0 +1,119 @@
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 3rem 2rem;
+    animation: fadeIn 0.4s ease-out;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+}
+
+.header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    background: var(--gradient-brand);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.header p {
+    font-size: 1.0625rem;
+    color: var(--color-text-tertiary);
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.metadataList {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.metadataItem {
+    display: grid;
+    grid-template-columns: minmax(150px, 200px) 1fr;
+    gap: 1rem;
+    padding: 0.875rem 1rem;
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
+    border: 1px solid transparent;
+    transition: all var(--transition-base);
+}
+
+.metadataItem:hover {
+    background: var(--color-bg-tertiary);
+}
+
+.metadataItem.sensitive {
+    border-left: 3px solid var(--color-accent-amber);
+    background: rgba(245, 158, 11, 0.05);
+}
+
+.key {
+    color: var(--color-text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+}
+
+.value {
+    color: var(--color-text-primary);
+    word-break: break-all;
+}
+
+.sensitive .key {
+    color: var(--color-accent-amber);
+}
+
+.noData {
+    color: var(--color-text-secondary);
+    text-align: center;
+    padding: 1.5rem;
+}
+
+.cleanResult {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.25rem;
+    text-align: center;
+}
+
+.cleanResult p {
+    color: var(--color-text-secondary);
+    max-width: 400px;
+}
+
+.preview {
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 2rem 1rem;
+    }
+
+    .metadataItem {
+        grid-template-columns: 1fr;
+        gap: 0.25rem;
+    }
+}
