@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState, DragEvent, ChangeEvent, useId } from 'react';
+import { useCallback, useState, useEffect, useRef, DragEvent, ChangeEvent, useId } from 'react';
 import styles from './FileDropzone.module.css';
 
 export interface FileDropzoneProps {
@@ -24,7 +24,9 @@ export function FileDropzone({
 }: FileDropzoneProps) {
     const inputId = useId();
     const [isDragging, setIsDragging] = useState(false);
+    const [pasteHint, setPasteHint] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const zoneRef = useRef<HTMLDivElement>(null);
 
     const validateFiles = useCallback(
         (files: File[]): File[] => {
@@ -40,6 +42,34 @@ export function FileDropzone({
         },
         [maxSize]
     );
+
+    // ---- Clipboard paste support (Feature 6) ----
+    useEffect(() => {
+        if (disabled) return;
+        const handlePaste = (e: ClipboardEvent) => {
+            if (!e.clipboardData) return;
+            const items = Array.from(e.clipboardData.items);
+            const files = items
+                .filter(item => item.kind === 'file')
+                .map(item => item.getAsFile())
+                .filter((f): f is File => f !== null);
+
+            if (files.length === 0) return;
+            e.preventDefault();
+
+            const filesToUse = multiple ? files : files.slice(0, 1);
+            const valid = validateFiles(filesToUse);
+            if (valid.length > 0) {
+                // Flash paste hint
+                setPasteHint(true);
+                setTimeout(() => setPasteHint(false), 1500);
+                onFilesSelect(valid);
+            }
+        };
+
+        window.addEventListener('paste', handlePaste);
+        return () => window.removeEventListener('paste', handlePaste);
+    }, [disabled, multiple, validateFiles, onFilesSelect]);
 
     const handleDragOver = useCallback((e: DragEvent<HTMLDivElement>) => {
         e.preventDefault();
@@ -79,7 +109,8 @@ export function FileDropzone({
 
     return (
         <div
-            className={`${styles.dropzone} ${isDragging ? styles.dragging : ''} ${disabled ? styles.disabled : ''} ${error ? styles.error : ''}`}
+            ref={zoneRef}
+            className={`${styles.dropzone} ${isDragging ? styles.dragging : ''} ${disabled ? styles.disabled : ''} ${error ? styles.error : ''} ${pasteHint ? styles.pasteFlash : ''}`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
@@ -102,8 +133,9 @@ export function FileDropzone({
                         <line x1="12" y1="3" x2="12" y2="15" />
                     </svg>
                 </div>
-                <span className={styles.labelText}>{label}</span>
+                <span className={styles.labelText}>{pasteHint ? '✅ Pasted!' : label}</span>
                 <span className={styles.description}>{description}</span>
+                <span className={styles.pasteHint}>or paste from clipboard (Ctrl+V)</span>
                 {error && <span className={styles.errorText}>{error}</span>}
             </label>
         </div>

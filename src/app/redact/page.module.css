@@ -72,6 +72,12 @@
     box-shadow: var(--shadow-lg);
 }
 
+/* Side-by-side layout: thumbnail strip + canvas viewport */
+.editorLayout {
+    display: flex;
+    min-height: 520px;
+}
+
 .viewport {
     overflow: auto;
     padding: 1rem;

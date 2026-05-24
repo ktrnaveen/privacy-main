@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
 import styles from "./layout.module.css";
+import { ThemeToggle } from "@/components";
 
 export const metadata: Metadata = {
   title: "Privacy Toolkit | Secure Client-Side Tools",
@@ -54,9 +55,12 @@ export default function RootLayout({
                 ))}
               </div>
 
-              <div className={styles.navBadge}>
-                <span className={styles.statusIndicator}></span>
-                <span>100% Client-Side</span>
+              <div className={styles.navRight}>
+                <div className={styles.navBadge}>
+                  <span className={styles.statusIndicator}></span>
+                  <span>100% Client-Side</span>
+                </div>
+                <ThemeToggle />
               </div>
             </div>
           </nav>

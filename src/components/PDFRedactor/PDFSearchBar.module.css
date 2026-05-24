@@ -1,0 +1,119 @@
+.searchBar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1rem;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg-secondary);
+    flex-wrap: wrap;
+}
+
+.inputGroup {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 200px;
+}
+
+.searchIcon {
+    position: absolute;
+    left: 0.75rem;
+    color: var(--color-text-muted);
+    pointer-events: none;
+    flex-shrink: 0;
+}
+
+.input {
+    width: 100%;
+    padding: 0.5rem 2.25rem 0.5rem 2.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    font-size: 0.875rem;
+    font-family: var(--font-sans);
+    transition: all var(--transition-fast);
+}
+
+.input:focus {
+    outline: none;
+    border-color: var(--color-border-focus);
+    box-shadow: 0 0 0 3px var(--glow-green);
+}
+
+.input::placeholder {
+    color: var(--color-text-muted);
+}
+
+.clearBtn {
+    position: absolute;
+    right: 0.625rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    padding: 0.25rem;
+    display: flex;
+    align-items: center;
+}
+
+.clearBtn:hover {
+    color: var(--color-text-secondary);
+}
+
+.searchBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    padding: 0.5rem 0.875rem;
+    background: var(--gradient-brand);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity var(--transition-fast);
+    min-width: 90px;
+}
+
+.searchBtn:hover:not(:disabled) {
+    opacity: 0.88;
+}
+
+.searchBtn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.spin {
+    animation: spin 0.9s linear infinite;
+}
+
+.resultInfo {
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
+.match {
+    color: var(--color-accent-green);
+    font-weight: 600;
+}
+
+.noMatch {
+    color: var(--color-text-muted);
+}
+
+.error {
+    font-size: 0.8rem;
+    color: var(--color-accent-rose);
+    width: 100%;
+}

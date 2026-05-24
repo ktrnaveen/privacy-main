@@ -19,10 +19,11 @@ export interface UsePDFRedactorReturn extends PDFRedactorState {
     setPage: (page: number) => void;
     setScale: (scale: number) => void;
     addRedaction: (redaction: RedactionArea) => void;
+    addRedactions: (redactions: RedactionArea[]) => void; // bulk add for auto-redact
     undoRedaction: () => void;
     clearRedactions: () => void;
     clearPageRedactions: (pageIndex: number) => void;
-    saveRedactedPDF: () => Promise<void>;
+    saveRedactedPDF: (pageRange?: number[]) => Promise<void>;
 }
 
 const RENDER_SCALE = 2.5; // Higher = better quality output
@@ -109,6 +110,14 @@ export function usePDFRedactor(): UsePDFRedactorReturn {
         });
     }, []);
 
+    const addRedactions = useCallback((newRedactions: RedactionArea[]) => {
+        setState(prev => {
+            const next = [...prev.redactions, ...newRedactions];
+            redactionsRef.current = next;
+            return { ...prev, redactions: next };
+        });
+    }, []);
+
     const undoRedaction = useCallback(() => {
         setState(prev => {
             const next = prev.redactions.slice(0, -1);
@@ -132,15 +141,9 @@ export function usePDFRedactor(): UsePDFRedactorReturn {
 
     /**
      * True redaction via canvas rasterization — runs on the main thread.
-     *
-     * Strategy:
-     *  1. Load the PDF bytes again with pdfjs (separate from the viewer instance)
-     *  2. For each page: render to an off-screen <canvas>, paint black boxes
-     *  3. Export each canvas to a JPEG blob
-     *  4. Embed all JPEGs into a new PDF via pdf-lib
-     *  5. Download the result — the output has NO text layer
+     * @param pageRange Optional array of 1-indexed page numbers to include. Default = all pages.
      */
-    const saveRedactedPDF = useCallback(async () => {
+    const saveRedactedPDF = useCallback(async (pageRange?: number[]) => {
         const pdfDoc = pdfDocumentRef.current;
         const pdfBytes = pdfBytesRef.current;
 
@@ -173,6 +176,9 @@ export function usePDFRedactor(): UsePDFRedactorReturn {
 
             const numPages = renderDoc.numPages;
             const newPdfDoc = await PDFDocument.create();
+            const pagesToRender = pageRange
+                ? pageRange.filter(p => p >= 1 && p <= numPages)
+                : Array.from({ length: numPages }, (_, i) => i + 1);
 
             // Index redactions by page for O(1) lookup
             const redactionsByPage = new Map<number, RedactionArea[]>();
@@ -181,13 +187,14 @@ export function usePDFRedactor(): UsePDFRedactorReturn {
                 redactionsByPage.get(r.pageIndex)!.push(r);
             });
 
-            for (let pageIdx = 0; pageIdx < numPages; pageIdx++) {
+            for (const pageNum of pagesToRender) {
+                const pageIdx = pageNum - 1;
                 setState(prev => ({
                     ...prev,
-                    processingMessage: `Rasterizing page ${pageIdx + 1} of ${numPages}…`,
+                    processingMessage: `Rasterizing page ${pageNum} of ${pagesToRender.length}…`,
                 }));
 
-                const page = await renderDoc.getPage(pageIdx + 1);
+                const page = await renderDoc.getPage(pageNum);
 
                 // Get native page size in PDF points (72 DPI)
                 const viewport1x = page.getViewport({ scale: 1.0 });
@@ -288,6 +295,7 @@ export function usePDFRedactor(): UsePDFRedactorReturn {
         setPage,
         setScale,
         addRedaction,
+        addRedactions,
         undoRedaction,
         clearRedactions,
         clearPageRedactions,

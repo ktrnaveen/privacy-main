@@ -8,3 +8,5 @@ export { Button } from './Button';
 export type { ButtonProps } from './Button';
 
 export { RouteLoadingSkeleton } from './RouteLoadingSkeleton';
+
+export { ThemeToggle } from './ThemeToggle';

@@ -17,6 +17,10 @@
     border-bottom: 1px solid var(--color-border);
 }
 
+[data-theme="dark"] .nav {
+    background: rgba(13, 17, 23, 0.85);
+}
+
 .navContainer {
     display: flex;
     align-items: center;
@@ -97,6 +101,12 @@
     color: var(--color-accent-green);
     text-transform: uppercase;
     letter-spacing: 0.05em;
+}
+
+.navRight {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
 }
 
 .statusIndicator {
@@ -199,6 +209,7 @@
     .navBadge {
         display: none;
     }
+    /* ThemeToggle stays visible always */
 }
 
 @media (max-width: 768px) {
