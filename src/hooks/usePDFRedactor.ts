@@ -10,6 +10,7 @@ export interface PDFRedactorState {
     scale: number;
     redactions: RedactionArea[];
     isProcessing: boolean;
+    processingMessage: string;
     error: string | null;
 }
 
@@ -24,6 +25,8 @@ export interface UsePDFRedactorReturn extends PDFRedactorState {
     saveRedactedPDF: () => Promise<void>;
 }
 
+const RENDER_SCALE = 2.5; // Higher = better quality output
+
 export function usePDFRedactor(): UsePDFRedactorReturn {
     const [state, setState] = useState<PDFRedactorState>({
         file: null,
@@ -33,86 +36,36 @@ export function usePDFRedactor(): UsePDFRedactorReturn {
         scale: 1.0,
         redactions: [],
         isProcessing: false,
+        processingMessage: '',
         error: null,
     });
 
-    const workerRef = useRef<Worker | null>(null);
     const pdfjsRef = useRef<typeof import('pdfjs-dist') | null>(null);
     const pdfBytesRef = useRef<Uint8Array | null>(null);
     const fileNameRef = useRef<string>('redacted.pdf');
-
-    // Initialize worker once on mount
-    useEffect(() => {
-        // { type: 'module' } is required for webpack to bundle the worker as ESM
-        workerRef.current = new Worker(
-            new URL('../workers/redaction.worker.ts', import.meta.url),
-            { type: 'module' }
-        );
-
-        const handleWorkerMessage = (e: MessageEvent) => {
-            const { type, pdfBytes, error } = e.data;
-            if (type === 'SUCCESS') {
-                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-                const url = URL.createObjectURL(blob);
-
-                // Trigger download
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = fileNameRef.current;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-
-                setState(prev => ({ ...prev, isProcessing: false, error: null }));
-            } else if (type === 'ERROR') {
-                console.error('Redaction worker error:', error);
-                setState(prev => ({
-                    ...prev,
-                    isProcessing: false,
-                    error: `Redaction failed: ${error}. Please try again.`
-                }));
-            }
-        };
-
-        const handleWorkerError = (e: ErrorEvent) => {
-            console.error('Worker script error:', e);
-            setState(prev => ({
-                ...prev,
-                isProcessing: false,
-                error: 'Worker failed to load. Please refresh the page and try again.'
-            }));
-        };
-
-        workerRef.current.addEventListener('message', handleWorkerMessage);
-        workerRef.current.addEventListener('error', handleWorkerError);
-
-        return () => {
-            workerRef.current?.removeEventListener('message', handleWorkerMessage);
-            workerRef.current?.removeEventListener('error', handleWorkerError);
-            workerRef.current?.terminate();
-        };
-    }, []); // Empty dependency array - only initialize once
+    // Keep a ref to current redactions so saveRedactedPDF always sees latest without stale closure
+    const redactionsRef = useRef<RedactionArea[]>([]);
+    const pdfDocumentRef = useRef<PDFDocumentProxy | null>(null);
 
     const loadPDF = useCallback(async (file: File) => {
-        setState(prev => ({ ...prev, isProcessing: true, error: null }));
+        setState(prev => ({ ...prev, isProcessing: true, processingMessage: 'Loading PDF…', error: null }));
         try {
             const pdfjs = pdfjsRef.current ?? await import('pdfjs-dist');
             pdfjsRef.current = pdfjs;
-            if (typeof window !== 'undefined' && 'Worker' in window) {
+
+            if (typeof window !== 'undefined') {
                 pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
             }
 
             const arrayBuffer = await file.arrayBuffer();
-            // Read bytes once, then clone for both pdfjs (viewer) and our redaction worker.
-            // Never pass the same ArrayBuffer to two consumers — one will get a detached buffer.
             const originalBytes = new Uint8Array(arrayBuffer);
-            pdfBytesRef.current = originalBytes.slice(); // clone for the redaction worker
+            // Keep one copy for the viewer, one for the redaction renderer
+            pdfBytesRef.current = originalBytes.slice();
             fileNameRef.current = file.name.replace(/\.pdf$/i, '') + '_redacted.pdf';
 
-            // Give pdfjs a separate clone so it won't conflict with the worker copy
             const loadingTask = pdfjs.getDocument({ data: originalBytes.slice() });
             const pdf = await loadingTask.promise;
+            pdfDocumentRef.current = pdf;
 
             setState(prev => ({
                 ...prev,
@@ -122,14 +75,17 @@ export function usePDFRedactor(): UsePDFRedactorReturn {
                 currentPage: 1,
                 redactions: [],
                 isProcessing: false,
+                processingMessage: '',
                 error: null,
             }));
+            redactionsRef.current = [];
         } catch (err) {
             console.error('Error loading PDF:', err);
             setState(prev => ({
                 ...prev,
                 isProcessing: false,
-                error: 'Failed to load PDF. Please make sure the file is a valid PDF and try again.'
+                processingMessage: '',
+                error: 'Failed to load PDF. Please make sure the file is a valid PDF and try again.',
             }));
         }
     }, []);
@@ -146,41 +102,185 @@ export function usePDFRedactor(): UsePDFRedactorReturn {
     }, []);
 
     const addRedaction = useCallback((redaction: RedactionArea) => {
-        setState(prev => ({
-            ...prev,
-            redactions: [...prev.redactions, redaction],
-        }));
+        setState(prev => {
+            const next = [...prev.redactions, redaction];
+            redactionsRef.current = next;
+            return { ...prev, redactions: next };
+        });
     }, []);
 
     const undoRedaction = useCallback(() => {
-        setState(prev => ({
-            ...prev,
-            redactions: prev.redactions.slice(0, -1),
-        }));
+        setState(prev => {
+            const next = prev.redactions.slice(0, -1);
+            redactionsRef.current = next;
+            return { ...prev, redactions: next };
+        });
     }, []);
 
     const clearRedactions = useCallback(() => {
+        redactionsRef.current = [];
         setState(prev => ({ ...prev, redactions: [] }));
     }, []);
 
     const clearPageRedactions = useCallback((pageIndex: number) => {
-        setState(prev => ({
-            ...prev,
-            redactions: prev.redactions.filter(r => r.pageIndex !== pageIndex),
-        }));
+        setState(prev => {
+            const next = prev.redactions.filter(r => r.pageIndex !== pageIndex);
+            redactionsRef.current = next;
+            return { ...prev, redactions: next };
+        });
     }, []);
 
+    /**
+     * True redaction via canvas rasterization — runs on the main thread.
+     *
+     * Strategy:
+     *  1. Load the PDF bytes again with pdfjs (separate from the viewer instance)
+     *  2. For each page: render to an off-screen <canvas>, paint black boxes
+     *  3. Export each canvas to a JPEG blob
+     *  4. Embed all JPEGs into a new PDF via pdf-lib
+     *  5. Download the result — the output has NO text layer
+     */
     const saveRedactedPDF = useCallback(async () => {
-        if (!pdfBytesRef.current || !workerRef.current) return;
+        const pdfDoc = pdfDocumentRef.current;
+        const pdfBytes = pdfBytesRef.current;
 
-        setState(prev => ({ ...prev, isProcessing: true, error: null }));
+        if (!pdfDoc || !pdfBytes) {
+            setState(prev => ({ ...prev, error: 'No PDF loaded. Please load a PDF first.' }));
+            return;
+        }
 
-        const bytesForWorker = pdfBytesRef.current.slice();
-        workerRef.current.postMessage({
-            pdfBytes: bytesForWorker,
-            redactions: state.redactions,
-        }, [bytesForWorker.buffer]);
-    }, [state.redactions]);
+        const redactions = redactionsRef.current;
+
+        setState(prev => ({
+            ...prev,
+            isProcessing: true,
+            processingMessage: 'Preparing pages…',
+            error: null,
+        }));
+
+        try {
+            // Load a fresh pdf-lib document for building the output
+            const { PDFDocument } = await import('pdf-lib');
+
+            // Load pdfjs fresh instance for rendering (to avoid conflicts with viewer)
+            const pdfjs = pdfjsRef.current!;
+            const renderDoc = await pdfjs.getDocument({
+                data: pdfBytes.slice(),
+                useWorkerFetch: false,
+                isEvalSupported: false,
+                useSystemFonts: true,
+            }).promise;
+
+            const numPages = renderDoc.numPages;
+            const newPdfDoc = await PDFDocument.create();
+
+            // Index redactions by page for O(1) lookup
+            const redactionsByPage = new Map<number, RedactionArea[]>();
+            redactions.forEach(r => {
+                if (!redactionsByPage.has(r.pageIndex)) redactionsByPage.set(r.pageIndex, []);
+                redactionsByPage.get(r.pageIndex)!.push(r);
+            });
+
+            for (let pageIdx = 0; pageIdx < numPages; pageIdx++) {
+                setState(prev => ({
+                    ...prev,
+                    processingMessage: `Rasterizing page ${pageIdx + 1} of ${numPages}…`,
+                }));
+
+                const page = await renderDoc.getPage(pageIdx + 1);
+
+                // Get native page size in PDF points (72 DPI)
+                const viewport1x = page.getViewport({ scale: 1.0 });
+                const viewport = page.getViewport({ scale: RENDER_SCALE });
+
+                const canvasWidth = Math.floor(viewport.width);
+                const canvasHeight = Math.floor(viewport.height);
+
+                // Create an off-screen canvas
+                const canvas = document.createElement('canvas');
+                canvas.width = canvasWidth;
+                canvas.height = canvasHeight;
+                const ctx = canvas.getContext('2d', { alpha: false });
+                if (!ctx) throw new Error('Failed to get 2D canvas context');
+
+                // White background
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+                // Render the PDF page onto the canvas
+                await page.render({
+                    canvasContext: ctx,
+                    viewport,
+                }).promise;
+
+                // Paint solid black over each redacted region
+                const pageRedactions = redactionsByPage.get(pageIdx) ?? [];
+                for (const r of pageRedactions) {
+                    // Convert from PDF point space (bottom-left origin) to canvas pixel space (top-left origin)
+                    const pageHeightPoints = viewport1x.height;
+                    const canvasX = Math.floor(r.x * RENDER_SCALE);
+                    const canvasY = Math.floor((pageHeightPoints - r.y - r.height) * RENDER_SCALE);
+                    const canvasW = Math.ceil(r.width * RENDER_SCALE);
+                    const canvasH = Math.ceil(r.height * RENDER_SCALE);
+
+                    ctx.fillStyle = '#000000';
+                    ctx.fillRect(canvasX, canvasY, canvasW, canvasH);
+                }
+
+                // Export canvas as JPEG blob
+                const jpegBytes = await new Promise<Uint8Array>((resolve, reject) => {
+                    canvas.toBlob(
+                        blob => {
+                            if (!blob) { reject(new Error('Canvas toBlob returned null')); return; }
+                            blob.arrayBuffer().then(buf => resolve(new Uint8Array(buf))).catch(reject);
+                        },
+                        'image/jpeg',
+                        0.92
+                    );
+                });
+
+                // Embed JPEG into the new PDF
+                const jpegImage = await newPdfDoc.embedJpg(jpegBytes);
+                const newPage = newPdfDoc.addPage([viewport1x.width, viewport1x.height]);
+                newPage.drawImage(jpegImage, {
+                    x: 0,
+                    y: 0,
+                    width: viewport1x.width,
+                    height: viewport1x.height,
+                });
+            }
+
+            setState(prev => ({ ...prev, processingMessage: 'Saving PDF…' }));
+            const outputBytes = await newPdfDoc.save();
+
+            // Trigger download
+            const blob = new Blob([outputBytes], { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileNameRef.current;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            // Delay revoke to ensure download starts
+            setTimeout(() => URL.revokeObjectURL(url), 5000);
+
+            setState(prev => ({
+                ...prev,
+                isProcessing: false,
+                processingMessage: '',
+                error: null,
+            }));
+        } catch (err) {
+            console.error('Redaction error:', err);
+            setState(prev => ({
+                ...prev,
+                isProcessing: false,
+                processingMessage: '',
+                error: `Redaction failed: ${err instanceof Error ? err.message : String(err)}`,
+            }));
+        }
+    }, []); // No deps — reads from refs
 
     return {
         ...state,

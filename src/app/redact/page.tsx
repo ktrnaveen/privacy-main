@@ -16,6 +16,7 @@ export default function RedactPage() {
         scale,
         redactions,
         isProcessing,
+        processingMessage,
         error,
         loadPDF,
         setPage,
@@ -23,13 +24,17 @@ export default function RedactPage() {
         addRedaction,
         undoRedaction,
         clearRedactions,
-        saveRedactedPDF
+        saveRedactedPDF,
     } = usePDFRedactor();
 
-    // We need to track the current page dimensions to pass to the overlay
-    const [pageDimensions, setPageDimensions] = useState<{ width: number; height: number; pdfHeightPoints: number } | null>(null);
+    // Track rendered page dimensions for the overlay
+    const [pageDimensions, setPageDimensions] = useState<{
+        width: number;
+        height: number;
+        pdfHeightPoints: number;
+    } | null>(null);
 
-    // Auto-fit only until the user changes zoom manually.
+    // Auto-fit scale until user zooms manually
     const containerRef = useRef<HTMLDivElement>(null);
     const [hasManualScale, setHasManualScale] = useState(false);
 
@@ -40,68 +45,60 @@ export default function RedactPage() {
         const containerWidth = containerRef.current.getBoundingClientRect().width;
         if (containerWidth <= 0) return;
 
-        const availableWidth = Math.max(containerWidth - 24, 120);
+        const availableWidth = Math.max(containerWidth - 32, 120);
         const scaleToFit = availableWidth / viewport.width;
-        const finalScale = Math.min(Math.max(scaleToFit, 0.5), 1.5);
+        const finalScale = Math.min(Math.max(scaleToFit, 0.4), 2.0);
         setScale(finalScale);
     }, [pdfDocument, currentPage, setScale]);
 
     useEffect(() => {
         if (!pdfDocument || hasManualScale) return;
-        calculateFitScale().catch((e) => console.error('Error auto-scaling:', e));
+        calculateFitScale().catch(e => console.error('Auto-scale error:', e));
     }, [pdfDocument, currentPage, hasManualScale, calculateFitScale]);
 
     useEffect(() => {
         if (!pdfDocument || !containerRef.current || hasManualScale) return;
         const observer = new ResizeObserver(() => {
-            calculateFitScale().catch((e) => console.error('Error resizing PDF viewport:', e));
+            calculateFitScale().catch(e => console.error('Resize scale error:', e));
         });
         observer.observe(containerRef.current);
-
         return () => observer.disconnect();
     }, [pdfDocument, hasManualScale, calculateFitScale]);
 
-    // Reset auto-scale flag when file changes
+    // Reset auto-scale flag and page dims when file changes
     useEffect(() => {
         setHasManualScale(false);
         setPageDimensions(null);
     }, [file]);
 
-    const handlePageRendered = (viewport: pdfjsLib.PageViewport) => {
-        // viewport.height is in CSS pixels (which equals PDF points * scale)
-        // We need the original PDF height in points for coordinate conversion
+    // FIXED: memoized with useCallback to prevent infinite re-render loop in PDFViewer
+    const handlePageRendered = useCallback((viewport: pdfjsLib.PageViewport) => {
         setPageDimensions({
-            width: viewport.width,
-            height: viewport.height,
-            pdfHeightPoints: viewport.height / scale
+            width: viewport.width,    // CSS pixels
+            height: viewport.height,  // CSS pixels
+            pdfHeightPoints: viewport.height / viewport.scale, // PDF points (unscaled)
         });
-    };
+    }, []); // stable — setPageDimensions is stable
 
-    const handleZoomChange = (nextScale: number) => {
+    const handleZoomChange = useCallback((nextScale: number) => {
         setHasManualScale(true);
         setScale(nextScale);
-    };
+    }, [setScale]);
+
+    const canDownload = redactions.length > 0 && !isProcessing;
 
     return (
         <div className={styles.container}>
             <header className={styles.header}>
                 <h1>PDF Redactor</h1>
-                <p>Permanently redact sensitive information from PDFs. Text under black boxes cannot be copied or extracted.</p>
+                <p>
+                    Permanently redact sensitive information from PDFs.
+                    Text under black boxes cannot be copied or extracted — pages are fully rasterized.
+                </p>
             </header>
 
             {error && (
-                <div style={{
-                    margin: '0 0 1.5rem',
-                    padding: '1rem 1.25rem',
-                    borderRadius: '10px',
-                    background: 'rgba(239,68,68,0.1)',
-                    border: '1px solid rgba(239,68,68,0.4)',
-                    color: '#dc2626',
-                    fontSize: '0.9rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.75rem',
-                }}>
+                <div className={styles.errorBanner}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <circle cx="12" cy="12" r="10" />
                         <line x1="12" y1="8" x2="12" y2="12" />
@@ -114,11 +111,19 @@ export default function RedactPage() {
             {!file ? (
                 <div className={styles.uploadSection}>
                     <FileDropzone
-                        onFilesSelect={(files) => loadPDF(files[0])}
+                        onFilesSelect={files => { if (files[0]) loadPDF(files[0]); }}
                         accept=".pdf,application/pdf"
                         label="Drop a PDF to redact"
                         description="Click to browse or drag and drop"
+                        disabled={isProcessing}
                     />
+                    <div className={styles.instructions}>
+                        <p>
+                            <strong>How it works:</strong> Draw rectangles over sensitive text on any page,
+                            then click Download. Pages are rasterized to images — redacted content is
+                            permanently destroyed and cannot be recovered.
+                        </p>
+                    </div>
                 </div>
             ) : (
                 <div className={styles.workspace}>
@@ -133,17 +138,26 @@ export default function RedactPage() {
                         onDownload={saveRedactedPDF}
                         canUndo={redactions.length > 0}
                         canClear={redactions.length > 0}
+                        canDownload={canDownload}
                         isProcessing={isProcessing}
                         hasFile={!!file}
+                        redactionCount={redactions.filter(r => r.pageIndex === currentPage - 1).length}
+                        totalRedactionCount={redactions.length}
                     />
 
                     <div className={styles.viewport} ref={containerRef}>
-                        <div className={styles.canvasWrapper} style={{ width: pageDimensions?.width, height: pageDimensions?.height }}>
+                        <div
+                            className={styles.canvasWrapper}
+                            style={{
+                                width: pageDimensions?.width ?? undefined,
+                                height: pageDimensions?.height ?? undefined,
+                            }}
+                        >
                             {pdfDocument && (
                                 <>
                                     <PDFViewer
                                         pdfDocument={pdfDocument}
-                                        pageIndex={currentPage - 1} // 0-based
+                                        pageIndex={currentPage - 1}
                                         scale={scale}
                                         onPageRendered={handlePageRendered}
                                     />
@@ -152,28 +166,48 @@ export default function RedactPage() {
                                             width={pageDimensions.width}
                                             height={pageDimensions.height}
                                             scale={scale}
-                                            pageIndex={currentPage - 1} // 0-based
+                                            pageIndex={currentPage - 1}
                                             redactions={redactions}
                                             onAddRedaction={addRedaction}
                                             pdfHeightPoints={pageDimensions.pdfHeightPoints}
                                         />
                                     )}
-                                    {isProcessing && (
-                                        <div className={styles.loading}>
-                                            <div style={{ textAlign: 'center' }}>
-                                                <div className={styles.spinner} style={{ margin: '0 auto 0.75rem' }} />
-                                                <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--color-text-secondary)', fontWeight: 500 }}>
-                                                    Applying redactions…
-                                                </p>
-                                                <p style={{ margin: '0.25rem 0 0', fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-                                                    Rasterizing pages to permanently remove text
-                                                </p>
-                                            </div>
-                                        </div>
-                                    )}
                                 </>
                             )}
+
+                            {/* Processing overlay */}
+                            {isProcessing && (
+                                <div className={styles.loadingOverlay}>
+                                    <div className={styles.loadingBox}>
+                                        <div className={styles.spinner} />
+                                        <p className={styles.loadingTitle}>
+                                            {processingMessage || 'Processing…'}
+                                        </p>
+                                        <p className={styles.loadingSubtitle}>
+                                            Rasterizing pages to permanently remove text data
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
                         </div>
+                    </div>
+
+                    {/* Status bar */}
+                    <div className={styles.statusBar}>
+                        <span>
+                            Page {currentPage} of {pageCount}
+                            {redactions.filter(r => r.pageIndex === currentPage - 1).length > 0 && (
+                                <span className={styles.redactBadge}>
+                                    {redactions.filter(r => r.pageIndex === currentPage - 1).length} redaction
+                                    {redactions.filter(r => r.pageIndex === currentPage - 1).length !== 1 ? 's' : ''} on this page
+                                </span>
+                            )}
+                        </span>
+                        <span className={styles.statusHint}>
+                            {redactions.length === 0
+                                ? '✏️ Draw rectangles over text to redact it'
+                                : `${redactions.length} total redaction${redactions.length !== 1 ? 's' : ''} across all pages`}
+                        </span>
                     </div>
                 </div>
             )}

@@ -10,29 +10,66 @@
 }
 
 .header h1 {
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: var(--color-text-primary);
+    font-size: 2rem;
+    font-weight: 800;
+    background: var(--gradient-brand);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     margin-bottom: 0.5rem;
 }
 
 .header p {
-    font-size: 1.125rem;
+    font-size: 1rem;
     color: var(--color-text-secondary);
     max-width: 600px;
     margin: 0 auto;
 }
 
+/* ---- Error Banner ---- */
+.errorBanner {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem 1.25rem;
+    border-radius: var(--radius-md);
+    background: rgba(225, 29, 72, 0.08);
+    border: 1px solid rgba(225, 29, 72, 0.3);
+    color: var(--color-accent-rose);
+    font-size: 0.9rem;
+}
+
+/* ---- Upload section ---- */
 .uploadSection {
     max-width: 760px;
     margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
 }
+
+.instructions {
+    padding: 1rem 1.25rem;
+    background: rgba(5, 150, 105, 0.06);
+    border: 1px solid rgba(5, 150, 105, 0.2);
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+}
+
+.instructions strong {
+    color: var(--color-accent-green);
+}
+
 
 .workspace {
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
-    background: var(--color-surface);
+    background: var(--color-bg-primary);
     overflow: hidden;
+    box-shadow: var(--shadow-lg);
 }
 
 .viewport {
@@ -342,27 +379,85 @@
     padding: 3rem;
 }
 
-/* Loading overlay */
-.loading {
+/* ---- Loading overlay ---- */
+.loadingOverlay {
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(255, 255, 255, 0.9);
+    inset: 0;
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(4px);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 10;
+    z-index: 30;
 }
 
+.loadingBox {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 2rem;
+    background: white;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    border: 1px solid var(--color-border);
+    min-width: 260px;
+}
+
+.loadingTitle {
+    margin: 0;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.loadingSubtitle {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--color-text-muted);
+}
+
+/* ---- Status bar ---- */
+.statusBar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 1rem;
+    border-top: 1px solid var(--color-border);
+    background: var(--color-bg-secondary);
+    font-size: 0.8125rem;
+    color: var(--color-text-tertiary);
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.statusHint {
+    color: var(--color-text-muted);
+    font-style: italic;
+}
+
+.redactBadge {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 0.75rem;
+    padding: 0.15rem 0.5rem;
+    background: rgba(225, 29, 72, 0.1);
+    color: var(--color-accent-rose);
+    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+/* ---- Spinner ---- */
 .spinner {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     border: 3px solid var(--color-border);
-    border-top-color: var(--color-primary);
+    border-top-color: var(--color-accent-green);
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
+    flex-shrink: 0;
 }
 
 @keyframes spin {

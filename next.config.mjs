@@ -3,19 +3,11 @@ const nextConfig = {
     images: {
         unoptimized: true,
     },
-    webpack: (config, { isServer }) => {
-        // Required for pdfjs-dist canvas stub
+    webpack: (config) => {
+        // Required: prevents pdfjs-dist from trying to load the canvas native module
         config.resolve.alias.canvas = false;
-
-        if (!isServer) {
-            // Allow TypeScript web workers to be bundled correctly
-            // This is needed for new Worker(new URL('...', import.meta.url))
-            config.output = {
-                ...config.output,
-                globalObject: 'globalThis',
-            };
-        }
-
+        // Required: prevents pdfjs from trying to resolve the 'fs' module in browser
+        config.resolve.alias.fs = false;
         return config;
     },
 };
