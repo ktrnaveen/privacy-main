@@ -1,10 +1,15 @@
+/* ============================================
+   Compress Page - Complete Styles
+   ============================================ */
+
 .container {
-    max-width: 900px;
+    max-width: 960px;
     margin: 0 auto;
     padding: 3rem 2rem;
     animation: fadeIn 0.4s ease-out;
 }
 
+/* ---- Header ---- */
 .header {
     text-align: center;
     margin-bottom: 2.5rem;
@@ -23,15 +28,16 @@
 .header p {
     font-size: 1.0625rem;
     color: var(--color-text-tertiary);
-    max-width: 500px;
+    max-width: 520px;
     margin: 0 auto;
 }
 
+/* ---- Controls ---- */
 .controls {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    grid-template-columns: 1fr 1fr 1fr;
     gap: 1.5rem;
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
     padding: 1.5rem;
     background: var(--color-surface);
     border-radius: var(--radius-lg);
@@ -47,6 +53,7 @@
 .control label {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     font-size: 0.875rem;
     font-weight: 500;
     color: var(--color-text-secondary);
@@ -56,62 +63,317 @@
     color: var(--color-accent-green);
     font-weight: 600;
     font-family: var(--font-mono);
+    font-size: 0.8125rem;
 }
 
-.results {
+.rangeLabels {
     display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-
-.comparison {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 1.5rem;
-    flex-wrap: wrap;
-}
-
-.imageBox {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.75rem;
-    max-width: 300px;
-}
-
-.imageBox img {
-    max-width: 100%;
-    max-height: 200px;
-    border-radius: var(--radius-md);
-    border: 1px solid var(--color-border);
-}
-
-.imageLabel {
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
+    justify-content: space-between;
+    font-size: 0.7rem;
     color: var(--color-text-muted);
-    font-weight: 600;
+    margin-top: -0.25rem;
 }
 
-.size {
-    font-family: var(--font-mono);
-    font-size: 0.875rem;
+/* ---- Format Buttons ---- */
+.formatButtons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.formatBtn {
+    flex: 1;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-secondary);
     color: var(--color-text-secondary);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-base);
+    font-family: var(--font-mono);
 }
 
-.arrow {
-    font-size: 1.5rem;
+.formatBtn:hover {
+    border-color: var(--color-accent-green);
     color: var(--color-accent-green);
 }
 
-.stats {
+.formatBtnActive {
+    background: var(--color-accent-green);
+    border-color: var(--color-accent-green);
+    color: #fff;
+}
+
+/* ---- Re-compress dirty banner ---- */
+.dirtyBanner {
     display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.875rem 1.25rem;
+    margin-bottom: 1.25rem;
+    background: rgba(217, 119, 6, 0.08);
+    border: 1px solid rgba(217, 119, 6, 0.25);
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
+    color: var(--color-accent-amber);
+    animation: slideDown 0.2s ease-out;
+}
+
+/* ---- Error card ---- */
+.errorCard {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1.25rem;
+    margin-bottom: 1.25rem;
+    background: rgba(225, 29, 72, 0.06);
+    border: 1px solid rgba(225, 29, 72, 0.2);
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
+    color: var(--color-accent-rose);
+    animation: slideDown 0.2s ease-out;
+}
+
+.errorCard svg {
+    flex-shrink: 0;
+    color: var(--color-accent-rose);
+}
+
+.errorCard span {
+    flex: 1;
+}
+
+.errorDismiss {
+    background: none;
+    border: none;
+    color: var(--color-accent-rose);
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0 0.25rem;
+    opacity: 0.7;
+    transition: opacity var(--transition-fast);
+    width: auto;
+    border-radius: 0;
+}
+
+.errorDismiss:hover {
+    opacity: 1;
+}
+
+/* ---- Batch Section ---- */
+.batchSection {
+    margin-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    animation: slideUp 0.3s ease-out;
+}
+
+.batchHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.batchTitle {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.batchActions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* ---- Batch Item ---- */
+.batchItem {
+    border-radius: var(--radius-lg);
+    animation: scaleIn 0.25s ease-out;
+}
+
+/* ---- Processing / Pending state ---- */
+.processingState {
+    padding: 1.25rem 1.5rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.processingInfo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.fileName {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    font-family: var(--font-mono);
+    max-width: 65%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.processingLabel {
+    font-size: 0.8125rem;
+    color: var(--color-accent-cyan);
+    font-weight: 500;
+}
+
+/* ---- Progress Bar ---- */
+.progressBar {
+    height: 6px;
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.progressFill {
+    height: 100%;
+    background: var(--gradient-brand);
+    border-radius: var(--radius-full);
+    transition: width 0.2s ease-out;
+}
+
+/* ---- Item error ---- */
+.itemError {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+    background: rgba(225, 29, 72, 0.05);
+    border: 1px solid rgba(225, 29, 72, 0.18);
+    border-radius: var(--radius-lg);
+    font-size: 0.875rem;
+    color: var(--color-accent-rose);
+}
+
+/* ---- Result Body ---- */
+.resultBody {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* ---- Before/After Slider ---- */
+.sliderContainer {
+    position: relative;
+    width: 100%;
+    height: 300px;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    cursor: col-resize;
+    user-select: none;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-tertiary);
+}
+
+.sliderImg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    pointer-events: none;
+}
+
+.sliderOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    overflow: hidden;
+    /* width is set inline via JS */
+}
+
+.sliderOverlay .sliderImg {
+    /* Image must stay at the container's width, not the clipped overlay width */
+    width: var(--slider-container-width, 100%);
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    object-fit: contain;
+}
+
+.sliderHandle {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.sliderLine {
+    width: 2px;
+    flex: 1;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 0 6px rgba(0, 0, 0, 0.3);
+}
+
+.sliderKnob {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+    display: flex;
+    align-items: center;
     justify-content: center;
-    gap: 4rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--color-border);
+    color: var(--color-accent-green);
+}
+
+.sliderLabelLeft,
+.sliderLabelRight {
+    position: absolute;
+    top: 10px;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.25rem 0.6rem;
+    border-radius: var(--radius-full);
+    background: rgba(0, 0, 0, 0.5);
+    color: #fff;
+    backdrop-filter: blur(4px);
+    pointer-events: none;
+}
+
+.sliderLabelLeft {
+    left: 10px;
+}
+
+.sliderLabelRight {
+    right: 10px;
+}
+
+/* ---- Stats Grid ---- */
+.statsGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--color-border);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
 }
 
 .stat {
@@ -119,10 +381,12 @@
     flex-direction: column;
     align-items: center;
     gap: 0.25rem;
+    padding: 1rem;
+    background: var(--color-bg-primary);
 }
 
 .statLabel {
-    font-size: 0.75rem;
+    font-size: 0.6875rem;
     text-transform: uppercase;
     letter-spacing: 0.1em;
     color: var(--color-text-muted);
@@ -130,32 +394,61 @@
 }
 
 .statValue {
-    font-size: 2rem;
+    font-size: 1.25rem;
     font-weight: 700;
-    color: var(--color-accent-green);
+    color: var(--color-text-primary);
     font-family: var(--font-mono);
 }
 
+/* ---- Animations ---- */
 @keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-
-    to {
-        opacity: 1;
-    }
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.98); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+/* ---- Responsive ---- */
 @media (max-width: 768px) {
     .container {
         padding: 2rem 1rem;
     }
 
-    .stats {
-        gap: 2rem;
+    .controls {
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
     }
 
-    .statValue {
-        font-size: 1.5rem;
+    .statsGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .sliderContainer {
+        height: 220px;
+    }
+
+    .dirtyBanner {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .statsGrid {
+        grid-template-columns: 1fr 1fr;
     }
 }
